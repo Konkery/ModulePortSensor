@@ -41,7 +41,7 @@ class ClassPortSensor extends ClassSensor {
                 if (ch.Status) ch.Value = this.Read(this._Pins[i]);
             });
         }, _period);
-        return this;
+        return true;
     }
     /**
      * @method
@@ -57,7 +57,7 @@ class ClassPortSensor extends ClassSensor {
         if (!this._Channels.map(ch => ch.Status).find(s => s !== 0)) {
             clearInterval(this._Interval);
         }
-        return this;
+        return true;
     }
     /**
      * @method
@@ -88,7 +88,7 @@ class ClassPortSensor extends ClassSensor {
         if (!INPUT_PIN_MODES.includes(_opts.mode))
             return false;
         this._Pins[_chNum].mode(_opts.mode); 
-        return this;
+        return true;
     }
     /**
      * @method
