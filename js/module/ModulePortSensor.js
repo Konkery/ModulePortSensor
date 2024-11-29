@@ -1,4 +1,5 @@
-// const PIN_MODES = ['output', 'analog', 'input', 'input_pullup', 'input_pulldown', 'opendrain', 'af_output', 'af_opendrain', 'auto'];
+const ClassSensor = require('ModuleSensor.min.js');
+// all port modes ['output', 'analog', 'input', 'input_pullup', 'input_pulldown', 'opendrain', 'af_output', 'af_opendrain', 'auto'];
 const INPUT_PIN_MODES = ['analog', 'input', 'input_pullup', 'input_pulldown', 'auto'];
 /**
  * @class
@@ -8,34 +9,65 @@ const INPUT_PIN_MODES = ['analog', 'input', 'input_pullup', 'input_pulldown', 'a
 class ClassPortSensor extends ClassSensor {
     constructor(opts) {
         ClassSensor.call(this, opts);
-
-        if (typeof opts.pinModes === 'object') {
-            for (let i = 0; i < this._QuantityChannel;i++) 
+        // Кол-во портов (_Pins) обязано быть равно _QuantityChannel
+        if (this._QuantityChannel !== this._Pins.length)
+            throw new Error('QuantityChannel must be equal to pins count');
+        // Тип сигнала определяет команду чтения с порта
+        if (!Array.isArray(this._TypeInSignals) || this._TypeInSignals.length !== this._QuantityChannel)
+            throw new Error('_TypeInSignals must be an array length of _QuantityChannel');
+        // Порты конфигурируются либо согласно конфигу либо в зависимости от _TypeInSignal
+        if (opts.pinModes) {
+            // Установка режимов согласно конфигу
+            this._Pins.forEach((_pin, i) => {
                 this.Configure(i, { mode: opts.pinModes[i] });
+            });
+        } else {
+            // Конфигурация по умолчанию
+            this._Pins.forEach((_pin, i) => {_pin.mode('output');});
         }
     }
+    /**
+     * @method
+     * @description Запускает периодическое чтение с указанных портов
+     * @param {number} _chNum 
+     * @param {number} _period 
+     * @param {object} _opts 
+     */
     Start(_chNum, _period, _opts) {
-        let opts = _opts || {};
-        let curr_mode = this._Pins[_chNum].getMode();
-        if (! (INPUT_PIN_MODES.includes(curr_mode) || opts.force)) return false;
-        this._ChStatus[_chNum] = 1;
+        this._Channels[_chNum].Status = 1;
         
         this._Interval = setInterval(() => {
-            this._ChStatus.forEach((status, i) => {
-                if (status === 1) this[`Ch${i}_Value`] = this.Read(this._Pins[i]);
+            this._Channels.forEach((ch, i) => {
+                if (ch.Status) ch.Value = this.Read(this._Pins[i]);
             });
         }, _period);
+        return this;
     }
+    /**
+     * @method
+     * @description Прекращает опрос указанного канала (порта) 
+     * @param {number} _chNum 
+     * @returns 
+     */
     Stop(_chNum) {
-        if (typeof this._ChStatus[_chNum] !== 'number') return false;
-        this._ChStatus[_chNum] = 0;
+        if (typeof this._Channels[_chNum].Status === 0) return false;
+
+        this._Channels[_chNum].Status = 0;
         
-        if (!this._ChStatus.find(s => s !== 0)) {
+        if (!this._Channels.map(ch => ch.Status).find(s => s !== 0)) {
             clearInterval(this._Interval);
         }
+        return this;
     }
+    /**
+     * @method
+     * @description Выполняет чтение с порта
+     * @param {Pin} port 
+     * @returns {number}
+     */
     Read(port) {
-        if (this._TypeInSignal == 'analog')
+        let i = this._Pins.indexOf(port);
+        if (this._TypeInSignals[i] == 'analog')
             return analogRead(port);
         return digitalRead(port);
     }
@@ -49,15 +81,21 @@ class ClassPortSensor extends ClassSensor {
      */
     /**
      * @method
+     * @description Устанавливает режим порта/портов
      * @param {[PinOpts]} _opts 
      */
     Configure(_chNum, _opts) {
         if (!INPUT_PIN_MODES.includes(_opts.mode))
             return false;
         this._Pins[_chNum].mode(_opts.mode); 
-        return true;
+        return this;
     }
-    
+    /**
+     * @method
+     * @description Возвращает объект с информацией о порте
+     * @param {number} _chNum 
+     * @returns 
+     */
     GetInfo(_chNum) {
         return Object.assign({ mode: this._Pins[_chNum].getMode() }, this._Pins[_chNum].getInfo());
     }

@@ -31,31 +31,16 @@
 Конструктор принимает данные из конфига. Пример ниже:
 ```json
 "19": {
-    "pins": ["P11", "P13"],
+    "pins": ["P11", "P13", "A3", "A4"],
     "name": "DigitalSensor",
     "article": "",
     "type": "sensor",
     "channelNames": ["digital"],
-    "typeInSignal": "digital",     // Внимание: именно это поле определяет как модуль будет взаимодействовать с данными портами
-    "typeOutSignal": "digital",
-    "quantityChannel": 2,
-    "busTypes": [],
-    "manufacturingData": {},
-    "modules": ["ModulePortSensor.min.js"]
-},
-"20": {
-    "pins": ["A3", "A4"],
-    "name": "AnalogSensor",
-    "article": "",
-    "type": "sensor",
-    "channelNames": ["analog"],    // Внимание: именно это поле определяет как модуль будет взаимодействовать с данными портами
-    "typeInSignal": "analog",
-    "typeOutSignal": "digital",
-    "quantityChannel": 2,
-    "busTypes": [],
-    "manufacturingData": {},
+    "typeInSignals": ["digital",  "digital", "analog", "analog"],   // Внимание: именно это поле определяет как модуль будет взаимодействовать с данными портами
+    "quantityChannel": 4,
     "modules": ["ModulePortSensor.min.js"]
 }
+
 ```
 
 ### Методы
@@ -80,7 +65,7 @@
 let s_ports = SensorManager.CreateDevice('20');
 
 // Явное задание режима порта
-s_ports[0].Configure({ mode: 'analog' });
+s_ports[3].Configure({ mode: 'analog' });
 s_ports[0].Start(20);   
 // С флагом force будет проигнорирована проверка режима работы порта и он установится автоматически    
 s_ports[1].Start(20, { force: true });
